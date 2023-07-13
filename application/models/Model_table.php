@@ -656,6 +656,12 @@ class Model_Table extends CI_Model
                 and pm2.status = 'a'
             ) as invoicePaid,
 
+            (select (ifnull(sum(mp.due), 0.00)) from tbl_material_purchase mp
+                where mp.supplier_id = s.Supplier_SlNo
+                " . ($date == null ? "" : " and mp.purchase_date < '$date'") . "
+                and mp.status = 'a'
+            ) as productionDue,
+
             (select ifnull(sum(sp.SPayment_amount), 0.00) from tbl_supplier_payment sp 
                 where sp.SPayment_customerID = s.Supplier_SlNo 
                 and sp.SPayment_TransactionType = 'CP'
@@ -678,7 +684,7 @@ class Model_Table extends CI_Model
             
             (select invoicePaid + cashPaid) as paid,
             
-            (select (bill + cashReceived) - (paid + returned)) as due
+            (select (bill + cashReceived + productionDue) - (paid + returned)) as due
 
             from tbl_supplier s
             where s.Supplier_brinchid = '$branchId' $clauses
